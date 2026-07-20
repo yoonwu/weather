@@ -1,0 +1,13 @@
+{
+  "name": "coast-forecast-compare",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile-first forecast comparison app for beaches and travel checks.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

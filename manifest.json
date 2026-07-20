@@ -1,0 +1,18 @@
+{
+  "name": "해변 예보 비교",
+  "short_name": "예보비교",
+  "description": "여행과 해수욕 전 여러 예보 모델과 해양 상태를 한 화면에서 비교합니다.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101417",
+  "theme_color": "#101417",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

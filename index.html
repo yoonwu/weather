@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#101417">
+    <title>해변 예보 비교</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="styles.css?v=14">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">여행·해수욕 전 확인</p>
+          <h1>해변 예보 비교</h1>
+        </div>
+        <button class="icon-button" id="refreshButton" type="button" aria-label="새로고침" title="새로고침">
+          <i data-lucide="refresh-cw"></i>
+        </button>
+      </header>
+
+      <section id="alertBanner" class="alert-banner is-hidden" aria-live="polite"></section>
+
+      <section class="control-panel" aria-label="예보 조회 설정">
+        <label class="field">
+          <span>장소</span>
+          <select id="placeSelect"></select>
+        </label>
+        <label class="field">
+          <span>시작 날짜</span>
+          <input id="startDateInput" type="date">
+        </label>
+        <label class="field">
+          <span>종료 날짜</span>
+          <input id="endDateInput" type="date">
+        </label>
+        <button class="text-button" id="locateButton" type="button">
+          <i data-lucide="crosshair"></i>
+          현재 위치
+        </button>
+        <button class="text-button" id="quickFavoriteButton" type="button">
+          <i data-lucide="bookmark-plus"></i>
+          즐겨찾기 추가
+        </button>
+      </section>
+
+      <form class="search-panel" id="searchForm">
+        <label class="search-input">
+          <i data-lucide="search"></i>
+          <input id="searchInput" type="search" placeholder="장소 검색">
+        </label>
+        <button class="text-button" type="submit">검색</button>
+      </form>
+      <div id="searchResults" class="search-results is-hidden"></div>
+
+      <div class="meta-row">
+        <span id="lastUpdated">아직 갱신 전</span>
+        <span id="sourceStatus">데이터 대기 중</span>
+      </div>
+
+      <main>
+        <section id="loadingState" class="loading-grid" aria-live="polite">
+          <div class="skeleton block"></div>
+          <div class="skeleton block"></div>
+          <div class="skeleton block"></div>
+        </section>
+
+        <section id="summaryView" class="view is-active" data-view="summary">
+          <section id="sourceHourlyList" class="source-stack"></section>
+
+          <p class="section-kicker">통합 판단</p>
+
+          <div class="summary-hero">
+            <div>
+              <p class="eyebrow" id="selectedPlaceName">장소 선택</p>
+              <h2 id="summaryTitle">예보를 불러오는 중</h2>
+              <p id="summaryText" class="muted">모델별 강수, 바람, 파도를 함께 확인합니다.</p>
+            </div>
+            <div class="status-badge" id="summaryBadge">대기</div>
+          </div>
+
+          <section class="metric-grid" id="summaryMetrics"></section>
+
+          <section class="card" id="recommendationCard"></section>
+
+          <section class="card map-card">
+            <div class="card-title-row">
+              <div>
+                <h3>지도</h3>
+                <p class="muted">즐겨찾기 장소를 눌러 바로 조회합니다.</p>
+              </div>
+              <button class="icon-button" id="addMapPointButton" type="button" aria-label="현재 지도 중심 저장" title="현재 지도 중심 저장">
+                <i data-lucide="bookmark-plus"></i>
+              </button>
+            </div>
+            <div id="map" class="map"></div>
+          </section>
+        </section>
+
+        <section id="modelsView" class="view" data-view="models">
+          <section class="card" id="consensusCard"></section>
+          <section class="card">
+            <div class="card-title-row">
+              <h3>모델별 시간표</h3>
+              <span class="source-pill">ECMWF · GFS · ICON</span>
+            </div>
+            <div id="modelTable" class="table-scroll"></div>
+          </section>
+          <section class="card">
+            <h3>강수량</h3>
+            <div id="precipChart" class="chart"></div>
+          </section>
+          <section class="card">
+            <h3>바람·돌풍</h3>
+            <div id="windChart" class="chart"></div>
+          </section>
+          <section class="card">
+            <h3>기온</h3>
+            <div id="temperatureChart" class="chart"></div>
+          </section>
+        </section>
+
+        <section id="marineView" class="view" data-view="marine">
+          <section class="card" id="marineSummary"></section>
+          <section id="marineHours" class="hour-strip"></section>
+          <section class="card">
+            <h3>해양 변화</h3>
+            <div id="marineChart" class="chart"></div>
+          </section>
+          <section class="safety-note">
+            이 앱은 예보 비교 도구이며 현장 안전을 보장하지 않습니다.
+            기상특보, 해변 입수통제, 안전요원의 안내를 우선하세요.
+            이안류는 일반 파고 데이터만으로 판정할 수 없습니다.
+          </section>
+        </section>
+
+        <section id="changesView" class="view" data-view="changes">
+          <section class="card" id="changeCard"></section>
+        </section>
+
+        <section id="settingsView" class="view" data-view="settings">
+          <section class="card">
+            <div class="card-title-row">
+              <h3>즐겨찾기</h3>
+              <button class="text-button" id="addFavoriteButton" type="button">
+                <i data-lucide="bookmark-plus"></i>
+                현재 장소 저장
+              </button>
+            </div>
+            <div id="favoriteList" class="favorite-list"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-title-row">
+              <div>
+                <h3>기상청 키</h3>
+                <p class="muted">공공데이터포털 단기예보 서비스키</p>
+              </div>
+              <span id="kmaKeyState" class="watch-text">키 없음</span>
+            </div>
+            <div class="settings-form">
+              <label class="field key-field">
+                <span>KMA_API_KEY</span>
+                <input id="kmaApiKeyInput" type="password" placeholder="서비스키 붙여넣기" autocomplete="off" spellcheck="false">
+              </label>
+              <div class="key-actions">
+                <button class="text-button" id="saveKmaKeyButton" type="button">
+                  <i data-lucide="save"></i>
+                  저장
+                </button>
+                <button class="icon-button" id="clearKmaKeyButton" type="button" aria-label="기상청 키 삭제" title="기상청 키 삭제">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h3>연동 상태</h3>
+            <div id="serviceCards" class="service-list"></div>
+          </section>
+
+          <section class="safety-note">
+            이 앱은 예보 비교 도구이며 현장 안전을 보장하지 않습니다.
+            기상특보, 해변 입수통제, 안전요원의 안내를 우선하세요.
+            이안류는 일반 파고 데이터만으로 판정할 수 없습니다.
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <nav class="tabbar" aria-label="하단 탭">
+      <button class="tab-button is-active" type="button" data-tab="summary">
+        <i data-lucide="calendar-clock"></i>
+        <span>시간별</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="models">
+        <i data-lucide="chart-no-axes-combined"></i>
+        <span>모델 비교</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="marine">
+        <i data-lucide="waves"></i>
+        <span>바다</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="changes">
+        <i data-lucide="history"></i>
+        <span>예보 변화</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="settings">
+        <i data-lucide="settings"></i>
+        <span>설정</span>
+      </button>
+    </nav>
+
+    <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="app.js?v=14"></script>
+  </body>
+</html>
