@@ -416,6 +416,10 @@ function renderSourceHourlyView() {
           </button>
         `).join("")}
       </div>
+      <div class="forecast-period-legend" aria-label="시간대 구분">
+        <span class="period-key is-swim"><i data-lucide="sun"></i>09:00~17:59 물놀이 중심</span>
+        <span class="period-key is-reference"><i data-lucide="moon"></i>18:00~08:59 참고</span>
+      </div>
       ${activeContent}
     </section>
   `;
@@ -649,10 +653,11 @@ function forecastTile(hour, kind, compact = false) {
   if (compact) return compactForecastTile(hour, kind);
 
   const weatherClass = `weather-${weatherTone(hour.icon, kind)}`;
+  const period = forecastPeriod(hour.time);
 
   return `
-    <article class="forecast-tile ${weatherClass} ${kind === "marine" ? "is-marine" : ""} ${compact ? "is-compact" : ""}">
-      <div class="tile-time">${formatTableTime(hour.time)}</div>
+    <article class="forecast-tile ${weatherClass} ${period.className} ${period.isStart ? "is-period-start" : ""} ${kind === "marine" ? "is-marine" : ""} ${compact ? "is-compact" : ""}">
+      <div class="tile-time" title="${period.label}"><i class="time-period-icon" data-lucide="${period.icon}"></i><span>${formatTableTime(hour.time)}</span></div>
       <div class="tile-icon weather-glyph" title="${escapeAttribute(hour.status)}"><i data-lucide="${hour.icon}"></i></div>
       <strong>${escapeHtml(hour.primary)}</strong>
       <span>${escapeHtml(hour.secondary)}</span>
@@ -666,11 +671,12 @@ function forecastTile(hour, kind, compact = false) {
 
 function compactForecastTile(hour, kind) {
   const weatherClass = `weather-${weatherTone(hour.icon, kind)}`;
+  const period = forecastPeriod(hour.time);
 
   return `
-    <article class="forecast-tile is-compact ${weatherClass} ${kind === "marine" ? "is-marine" : ""}">
+    <article class="forecast-tile is-compact ${weatherClass} ${period.className} ${period.isStart ? "is-period-start" : ""} ${kind === "marine" ? "is-marine" : ""}">
       <div class="compact-top">
-        <span>${formatTableTime(hour.time)}</span>
+        <div class="compact-time" title="${period.label}"><i class="time-period-icon" data-lucide="${period.icon}"></i><span>${formatTableTime(hour.time)}</span></div>
         <span class="weather-glyph" title="${escapeAttribute(hour.status)}"><i data-lucide="${hour.icon}"></i></span>
       </div>
       <div class="compact-main">
@@ -1255,7 +1261,7 @@ function calculateRecommendation(models, marine) {
 
   const times = commonTimes(models).filter((time) => {
     const hour = hourNumber(time);
-    return hour >= 6 && hour <= 19;
+    return hour >= 9 && hour < 18;
   });
 
   const marineByTime = new Map(marine.map((hour) => [hour.time, hour]));
@@ -1867,6 +1873,17 @@ function weatherTone(icon, kind) {
     wind: "wind",
     waves: "marine"
   })[icon] || "neutral";
+}
+
+function forecastPeriod(time) {
+  const hour = hourNumber(time);
+  const isSwimHours = hour >= 9 && hour < 18;
+  return {
+    className: isSwimHours ? "is-swim-hours" : "is-off-hours",
+    icon: isSwimHours ? "sun" : "moon",
+    label: isSwimHours ? "물놀이 중심 시간" : "참고 시간",
+    isStart: hour === 9 || hour === 18
+  };
 }
 
 function marineIcon(hour) {
