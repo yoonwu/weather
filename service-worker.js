@@ -1,9 +1,9 @@
-const CACHE_NAME = "coast-forecast-compare-v23";
+const CACHE_NAME = "coast-forecast-compare-v24";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
-  "/styles.css?v=23",
-  "/app.js?v=23",
+  "/styles.css?v=24",
+  "/app.js?v=24",
   "/manifest.json",
   "/icons/icon.svg"
 ];

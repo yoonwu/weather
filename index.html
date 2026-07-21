@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="stylesheet" href="styles.css?v=24">
   </head>
   <body>
     <div class="app-shell">
@@ -118,11 +118,29 @@
                 <h3>지도</h3>
                 <p class="muted">즐겨찾기 장소를 눌러 바로 조회합니다.</p>
               </div>
-              <button class="icon-button" id="addMapPointButton" type="button" aria-label="현재 지도 중심 저장" title="현재 지도 중심 저장">
-                <i data-lucide="bookmark-plus"></i>
-              </button>
+              <div class="map-title-actions">
+                <button class="text-button radar-toggle" id="radarToggleButton" type="button" aria-pressed="false" aria-label="비구름 레이더 켜기" title="비구름 레이더">
+                  <i data-lucide="cloud-rain"></i>
+                  <span id="radarToggleLabel">레이더</span>
+                </button>
+                <button class="icon-button" id="addMapPointButton" type="button" aria-label="현재 지도 중심 저장" title="현재 지도 중심 저장">
+                  <i data-lucide="bookmark-plus"></i>
+                </button>
+              </div>
             </div>
             <div id="map" class="map"></div>
+            <div id="radarControls" class="radar-controls is-hidden">
+              <button class="icon-button radar-play" id="radarPlayButton" type="button" aria-label="레이더 재생" title="레이더 재생">
+                <i data-lucide="play"></i>
+              </button>
+              <input id="radarTimeSlider" class="radar-time-slider" type="range" min="0" max="0" value="0" step="1" aria-label="레이더 관측 시각">
+              <time id="radarTimeLabel" class="radar-time-label">관측 시각</time>
+              <div class="radar-legend" aria-label="강수 강도">
+                <span>약</span>
+                <span class="radar-scale"></span>
+                <span>강</span>
+              </div>
+            </div>
           </section>
         </section>
 
@@ -245,6 +263,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=24"></script>
   </body>
 </html>

@@ -6,6 +6,7 @@
 
 - 기본 즐겨찾기: 고성 28곳, 속초 4곳, 삼척 16곳의 해수욕장을 지역별로 제공
 - 지도 보기: Leaflet + OpenStreetMap 타일, 즐겨찾기 마커 선택, 지도 클릭 위치 조회
+- 비구름 레이더: RainViewer 최근 2시간 관측 타일, 시간 슬라이더와 일회 재생
 - 장소 검색: Open-Meteo Geocoding + OpenStreetMap Nominatim
 - 기간 선택: 시작 날짜와 종료 날짜를 지정하고 해당 범위의 시간별 예보를 조회
 - 출처별 시간표: KMA, ECMWF, GFS, ICON, AccuWeather, 해양예보를 탭으로 선택하고 가로 시간축으로 표시

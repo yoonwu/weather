@@ -122,6 +122,13 @@ const state = {
   map: null,
   markers: [],
   mapClickMarker: null,
+  radarLayer: null,
+  radarFrames: [],
+  radarHost: "",
+  radarFrameIndex: 0,
+  radarEnabled: false,
+  radarLoading: false,
+  radarTimer: null,
   activeTab: "summary",
   activeSource: "all",
   expandedSources: new Set(["ecmwf"]),
@@ -222,6 +229,12 @@ function bindElements() {
     "kmaKeyState",
     "addFavoriteButton",
     "addMapPointButton",
+    "radarToggleButton",
+    "radarToggleLabel",
+    "radarControls",
+    "radarPlayButton",
+    "radarTimeSlider",
+    "radarTimeLabel",
     "map",
     "toast"
   ].forEach((id) => {
@@ -260,6 +273,12 @@ function bindEvents() {
       source: "지도 중심"
     });
     addFavorite(state.currentPlace);
+  });
+  els.radarToggleButton.addEventListener("click", toggleRadar);
+  els.radarPlayButton.addEventListener("click", toggleRadarPlayback);
+  els.radarTimeSlider.addEventListener("input", () => {
+    stopRadarPlayback();
+    setRadarFrame(Number(els.radarTimeSlider.value));
   });
 
   document.querySelectorAll(".tab-button").forEach((button) => {
@@ -1507,6 +1526,10 @@ function initMap() {
     attribution: "&copy; OpenStreetMap"
   }).addTo(state.map);
 
+  state.map.createPane("radarPane");
+  state.map.getPane("radarPane").style.zIndex = "350";
+  state.map.getPane("radarPane").style.pointerEvents = "none";
+
   state.map.on("click", async (event) => {
     const place = {
       id: `map-${event.latlng.lat.toFixed(5)}-${event.latlng.lng.toFixed(5)}`,
@@ -1520,6 +1543,133 @@ function initMap() {
     state.mapClickMarker = L.marker([place.latitude, place.longitude]).addTo(state.map).bindPopup("지도 선택 위치").openPopup();
     await refreshForecast();
   });
+}
+
+async function toggleRadar() {
+  if (state.radarEnabled) {
+    disableRadar();
+    return;
+  }
+  if (state.radarLoading || !state.map) return;
+
+  state.radarLoading = true;
+  els.radarToggleButton.disabled = true;
+  els.radarToggleLabel.textContent = "불러오는 중";
+
+  try {
+    const response = await fetch("https://api.rainviewer.com/public/weather-maps.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("레이더 정보를 불러오지 못했습니다.");
+    const data = await response.json();
+    const frames = Array.isArray(data.radar?.past) ? data.radar.past : [];
+    if (!data.host || !frames.length) throw new Error("현재 표시할 레이더 관측 자료가 없습니다.");
+
+    state.radarHost = data.host;
+    state.radarFrames = frames;
+    state.radarFrameIndex = frames.length - 1;
+    state.radarEnabled = true;
+    els.radarTimeSlider.max = String(frames.length - 1);
+    renderRadarFrame();
+  } catch (error) {
+    disableRadar();
+    showToast(error.message || "비구름 레이더를 불러오지 못했습니다.");
+  } finally {
+    state.radarLoading = false;
+    els.radarToggleButton.disabled = false;
+    updateRadarUi();
+  }
+}
+
+function disableRadar() {
+  stopRadarPlayback();
+  if (state.radarLayer && state.map) state.map.removeLayer(state.radarLayer);
+  state.radarLayer = null;
+  state.radarEnabled = false;
+  updateRadarUi();
+}
+
+function setRadarFrame(index) {
+  if (!state.radarEnabled || !state.radarFrames.length) return;
+  const nextIndex = Math.max(0, Math.min(Math.round(index), state.radarFrames.length - 1));
+  if (nextIndex === state.radarFrameIndex && state.radarLayer) {
+    updateRadarTimeUi();
+    return;
+  }
+  state.radarFrameIndex = nextIndex;
+  renderRadarFrame();
+}
+
+function renderRadarFrame() {
+  if (!state.map || !state.radarEnabled) return;
+  const frame = state.radarFrames[state.radarFrameIndex];
+  if (!frame) return;
+
+  if (state.radarLayer) state.map.removeLayer(state.radarLayer);
+  state.radarLayer = L.tileLayer(`${state.radarHost}${frame.path}/512/{z}/{x}/{y}/2/1_1.png`, {
+    pane: "radarPane",
+    tileSize: 512,
+    zoomOffset: -1,
+    maxNativeZoom: 7,
+    maxZoom: 18,
+    opacity: 0.72,
+    updateWhenZooming: false,
+    updateWhenIdle: true,
+    attribution: 'Radar &copy; <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>'
+  }).addTo(state.map);
+  updateRadarTimeUi();
+}
+
+function toggleRadarPlayback() {
+  if (!state.radarEnabled || !state.radarFrames.length) return;
+  if (state.radarTimer) {
+    stopRadarPlayback();
+    updateRadarUi();
+    return;
+  }
+
+  if (state.radarFrameIndex >= state.radarFrames.length - 1) setRadarFrame(0);
+  state.radarTimer = window.setInterval(() => {
+    if (state.radarFrameIndex >= state.radarFrames.length - 1) {
+      stopRadarPlayback();
+      updateRadarUi();
+      return;
+    }
+    setRadarFrame(state.radarFrameIndex + 1);
+  }, 900);
+  updateRadarUi();
+}
+
+function stopRadarPlayback() {
+  if (!state.radarTimer) return;
+  window.clearInterval(state.radarTimer);
+  state.radarTimer = null;
+}
+
+function updateRadarTimeUi() {
+  const frame = state.radarFrames[state.radarFrameIndex];
+  if (!frame) return;
+  els.radarTimeSlider.value = String(state.radarFrameIndex);
+  els.radarTimeLabel.dateTime = new Date(frame.time * 1000).toISOString();
+  els.radarTimeLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Seoul"
+  }).format(new Date(frame.time * 1000));
+}
+
+function updateRadarUi() {
+  const playing = Boolean(state.radarTimer);
+  els.radarControls.classList.toggle("is-hidden", !state.radarEnabled);
+  els.radarToggleButton.classList.toggle("is-active", state.radarEnabled);
+  els.radarToggleButton.setAttribute("aria-pressed", String(state.radarEnabled));
+  els.radarToggleButton.setAttribute("aria-label", state.radarEnabled ? "비구름 레이더 끄기" : "비구름 레이더 켜기");
+  els.radarToggleLabel.textContent = "레이더";
+  els.radarPlayButton.innerHTML = `<i data-lucide="${playing ? "pause" : "play"}"></i>`;
+  els.radarPlayButton.setAttribute("aria-label", playing ? "레이더 일시정지" : "레이더 재생");
+  els.radarPlayButton.title = playing ? "레이더 일시정지" : "레이더 재생";
+  renderIcons();
 }
 
 function updateMap() {
