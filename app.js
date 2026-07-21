@@ -183,7 +183,11 @@ function bindElements() {
   [
     "refreshButton",
     "alertBanner",
-    "placePicker",
+    "favoritePicker",
+    "favoritePickerButton",
+    "favoritePickerLabel",
+    "favoritePickerMenu",
+    "placeSearch",
     "startDateInput",
     "endDateInput",
     "locateButton",
@@ -234,12 +238,15 @@ function bindEvents() {
 
   els.locateButton.addEventListener("click", useCurrentLocation);
   els.quickFavoriteButton.addEventListener("click", () => addFavorite(state.currentPlace));
+  els.favoritePickerButton.addEventListener("click", toggleFavoriteMenu);
+  els.favoritePicker.addEventListener("keydown", handleFavoritePickerKeydown);
   els.searchForm.addEventListener("submit", searchPlaces);
-  els.searchInput.addEventListener("focus", showFavoriteSuggestions);
   els.searchInput.addEventListener("input", handleSearchInput);
-  els.placePicker.addEventListener("keydown", handlePlacePickerKeydown);
+  els.searchInput.addEventListener("focus", closeFavoriteMenu);
+  els.placeSearch.addEventListener("keydown", handleSearchKeydown);
   document.addEventListener("pointerdown", (event) => {
-    if (!els.placePicker.contains(event.target)) closeSearchResults({ restoreValue: true });
+    if (!els.favoritePicker.contains(event.target)) closeFavoriteMenu();
+    if (!els.placeSearch.contains(event.target)) closeSearchResults();
   });
   els.addFavoriteButton.addEventListener("click", () => addFavorite(state.currentPlace));
   els.addMapPointButton.addEventListener("click", () => {
@@ -1539,32 +1546,10 @@ function handleSearchInput() {
   state.searchRequestId += 1;
   const query = els.searchInput.value.trim();
   if (query.length < 2) {
-    showFavoriteSuggestions();
+    closeSearchResults();
     return;
   }
   state.searchTimer = window.setTimeout(() => searchPlaces(), 450);
-}
-
-function showFavoriteSuggestions() {
-  const query = els.searchInput.value.trim().toLocaleLowerCase("ko-KR");
-  const places = [...state.favorites];
-  if (state.currentPlace && !places.some((place) => place.id === state.currentPlace.id)) {
-    places.unshift(state.currentPlace);
-  }
-  const favorites = places.filter((place) => {
-    if (!query || query === state.currentPlace?.name.toLocaleLowerCase("ko-KR")) return true;
-    return place.name.toLocaleLowerCase("ko-KR").includes(query);
-  });
-
-  if (!favorites.length && query.length >= 2) return;
-
-  els.searchResults.innerHTML = `
-    <div class="search-results-label">저장한 장소</div>
-    ${favoriteSuggestionGroups(favorites)}
-  `;
-  openSearchResults();
-  bindSearchResultEvents();
-  renderIcons();
 }
 
 async function searchPlaces(event) {
@@ -1572,7 +1557,7 @@ async function searchPlaces(event) {
   window.clearTimeout(state.searchTimer);
   const query = els.searchInput.value.trim();
   if (!query) {
-    showFavoriteSuggestions();
+    closeSearchResults();
     return;
   }
 
@@ -1622,11 +1607,9 @@ async function searchPlaces(event) {
   }
 }
 
-function searchResultButton(place, options = {}) {
-  const detail = options.favorite || options.current
-    ? `${options.current ? "현재 선택" : "즐겨찾기"} · ${place.source || "사용자 저장"}`
-    : place.label || `${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}`;
-  const icon = options.favorite || options.current ? "bookmark" : place.type === "beach" ? "waves" : "map-pin";
+function searchResultButton(place) {
+  const detail = place.label || `${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}`;
+  const icon = place.type === "beach" ? "waves" : "map-pin";
   return `
     <button
       class="search-result"
@@ -1641,19 +1624,9 @@ function searchResultButton(place, options = {}) {
           <small>${escapeHtml(detail)}</small>
         </span>
       </span>
-      ${options.favorite || options.current ? "" : `<span class="source-pill">${escapeHtml(place.source || "장소 검색")}</span>`}
+      <span class="source-pill">${escapeHtml(place.source || "장소 검색")}</span>
     </button>
   `;
-}
-
-function favoriteSuggestionGroups(places) {
-  return placesByRegion(places).map(([region, regionPlaces]) => `
-    <div class="search-group-label">${escapeHtml(region)}</div>
-    ${regionPlaces.map((place) => searchResultButton(place, {
-      favorite: state.favorites.some((favorite) => favorite.id === place.id),
-      current: place.id === state.currentPlace?.id
-    })).join("")}
-  `).join("");
 }
 
 function favoriteSettingsGroups(places) {
@@ -1711,16 +1684,16 @@ function bindSearchResultEvents() {
           ? place.id
           : `search-${place.latitude.toFixed(5)}-${place.longitude.toFixed(5)}`
       });
+      els.searchInput.value = "";
       closeSearchResults();
       await refreshForecast();
     });
   });
 }
 
-function handlePlacePickerKeydown(event) {
+function handleSearchKeydown(event) {
   if (event.key === "Escape") {
     closeSearchResults();
-    els.searchInput.value = state.currentPlace?.name || "";
     els.searchInput.focus();
     return;
   }
@@ -1738,17 +1711,86 @@ function handlePlacePickerKeydown(event) {
   options[nextIndex].focus();
 }
 
+function toggleFavoriteMenu() {
+  const shouldOpen = els.favoritePickerMenu.classList.contains("is-hidden");
+  if (shouldOpen) {
+    renderFavoritePickerMenu();
+    els.favoritePickerMenu.classList.remove("is-hidden");
+    els.favoritePickerButton.setAttribute("aria-expanded", "true");
+    closeSearchResults();
+  } else {
+    closeFavoriteMenu();
+  }
+}
+
+function closeFavoriteMenu() {
+  els.favoritePickerMenu.classList.add("is-hidden");
+  els.favoritePickerButton.setAttribute("aria-expanded", "false");
+}
+
+function renderFavoritePickerMenu() {
+  els.favoritePickerMenu.innerHTML = placesByRegion(state.favorites).map(([region, places]) => `
+    <div class="search-group-label">${escapeHtml(region)}</div>
+    ${places.map((place) => `
+      <button
+        class="search-result favorite-option"
+        type="button"
+        role="option"
+        data-favorite-id="${escapeAttribute(place.id)}"
+        aria-selected="${place.id === state.currentPlace?.id}"
+      >
+        <span class="search-result-main">
+          <span class="search-result-icon"><i data-lucide="bookmark"></i></span>
+          <span class="search-result-copy">
+            <strong>${escapeHtml(place.name)}</strong>
+            <small>${escapeHtml(place.source || "사용자 저장")}</small>
+          </span>
+        </span>
+        ${place.id === state.currentPlace?.id ? `<i class="favorite-check" data-lucide="check"></i>` : ""}
+      </button>
+    `).join("")}
+  `).join("");
+
+  els.favoritePickerMenu.querySelectorAll("[data-favorite-id]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const place = getPlaceById(button.dataset.favoriteId);
+      if (!place) return;
+      selectPlace(place);
+      closeFavoriteMenu();
+      await refreshForecast();
+    });
+  });
+  renderIcons();
+}
+
+function handleFavoritePickerKeydown(event) {
+  if (event.key === "Escape") {
+    closeFavoriteMenu();
+    els.favoritePickerButton.focus();
+    return;
+  }
+  if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+  if (els.favoritePickerMenu.classList.contains("is-hidden")) toggleFavoriteMenu();
+  const options = [...els.favoritePickerMenu.querySelectorAll(".favorite-option")];
+  if (!options.length) return;
+  event.preventDefault();
+  const currentIndex = options.indexOf(document.activeElement);
+  const nextIndex = currentIndex < 0
+    ? event.key === "ArrowDown" ? 0 : options.length - 1
+    : event.key === "ArrowDown"
+      ? (currentIndex + 1) % options.length
+      : (currentIndex - 1 + options.length) % options.length;
+  options[nextIndex].focus();
+}
+
 function openSearchResults() {
   els.searchResults.classList.remove("is-hidden");
   els.searchInput.setAttribute("aria-expanded", "true");
 }
 
-function closeSearchResults(options = {}) {
+function closeSearchResults() {
   els.searchResults.classList.add("is-hidden");
   els.searchInput.setAttribute("aria-expanded", "false");
-  if (options.restoreValue && state.currentPlace) {
-    els.searchInput.value = state.currentPlace.name;
-  }
 }
 
 function useCurrentLocation() {
@@ -1819,9 +1861,8 @@ function selectPlace(place) {
 
 function renderPlaceOptions() {
   if (!state.currentPlace) return;
-  if (document.activeElement !== els.searchInput) {
-    els.searchInput.value = state.currentPlace.name;
-  }
+  els.favoritePickerLabel.textContent = state.currentPlace.name;
+  renderFavoritePickerMenu();
 }
 
 function addFavorite(place) {
