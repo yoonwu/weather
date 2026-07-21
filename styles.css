@@ -306,6 +306,21 @@ h3 {
   font-weight: 800;
 }
 
+.search-group-label {
+  margin: 5px 5px 2px;
+  border-top: 1px solid var(--line);
+  padding: 9px 4px 3px;
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.search-results-label + .search-group-label {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 4px;
+}
+
 .search-result {
   display: flex;
   align-items: center;
@@ -1217,6 +1232,19 @@ th {
 .service-list {
   display: grid;
   gap: 8px;
+}
+
+.favorite-group-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-top: 6px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 2px 6px;
+  background: var(--surface);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .settings-form {

@@ -34,72 +34,75 @@ const SOURCE_DESCRIPTIONS = {
   marine: "바다 탭은 해상 격자의 파고, 너울, 파주기, 수온을 보여줍니다. 해수욕 전에는 육상 예보와 함께 봐야 합니다."
 };
 
+const DEFAULT_PLACES_VERSION = "2026-07-east-coast-beaches-v1";
 const DEFAULT_PLACES = [
-  {
-    id: "ayajin",
-    name: "아야진해수욕장",
-    latitude: 38.27593888888889,
-    longitude: 128.5534138888889,
-    nx: 86,
-    ny: 143,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "gonghyeonjin1",
-    name: "공현진1리해수욕장",
-    latitude: 38.35858298,
-    longitude: 128.5085337,
-    nx: 86,
-    ny: 144,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "hwajinpo",
-    name: "화진포해수욕장",
-    latitude: 38.47803,
-    longitude: 128.43894,
-    nx: 84,
-    ny: 147,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "machajin",
-    name: "마차진해수욕장",
-    latitude: 38.510930555555554,
-    longitude: 128.41989444444442,
-    nx: 84,
-    ny: 148,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "daejin1",
-    name: "대진1리해수욕장",
-    latitude: 38.50411751,
-    longitude: 128.4249022,
-    nx: 84,
-    ny: 147,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "cheonjin",
-    name: "천진해수욕장",
-    latitude: 38.257641666666665,
-    longitude: 128.56039166666667,
-    nx: 87,
-    ny: 142,
-    source: "기상청 전국해수욕장 위경도"
-  },
-  {
-    id: "kumho-seorak",
-    name: "금호설악리조트",
-    latitude: 38.181985,
-    longitude: 128.549375,
-    source: "OpenStreetMap Nominatim"
-  }
+  defaultBeach("goseong-myeongpa", "고성", "명파해수욕장", 38.5430, 128.4085),
+  defaultBeach("machajin", "고성", "마차진해수욕장", 38.5109306, 128.4198944),
+  defaultBeach("daejin1", "고성", "대진1리해수욕장", 38.5041175, 128.4249022),
+  defaultBeach("goseong-daejin5", "고성", "대진5리해수욕장", 38.4956850, 128.4270550),
+  defaultBeach("goseong-chodo", "고성", "초도해수욕장", 38.4855300, 128.4320000),
+  defaultBeach("goseong-hwajinpo-hyeonnae", "고성", "화진포해수욕장(현내)", 38.4813000, 128.4380000),
+  defaultBeach("hwajinpo", "고성", "화진포해수욕장(거진)", 38.4762000, 128.4389000),
+  defaultBeach("goseong-geojin1", "고성", "거진1리해수욕장", 38.4480190, 128.4645420),
+  defaultBeach("goseong-geojin11", "고성", "거진11리해수욕장", 38.4413430, 128.4530420),
+  defaultBeach("goseong-banam", "고성", "반암해수욕장", 38.4202310, 128.4640670),
+  defaultBeach("goseong-gajin", "고성", "가진해수욕장", 38.3738929, 128.5091656),
+  defaultBeach("gonghyeonjin1", "고성", "공현진1리해수욕장", 38.3585830, 128.5085337),
+  defaultBeach("goseong-gonghyeonjin2", "고성", "공현진2리해수욕장", 38.3540000, 128.5100000),
+  defaultBeach("goseong-songjiho", "고성", "송지호해수욕장", 38.3397414, 128.5183328),
+  defaultBeach("goseong-songjiho-camp", "고성", "송지호오토캠핑장해수욕장", 38.3345000, 128.5220000),
+  defaultBeach("goseong-bongsudae", "고성", "봉수대해수욕장", 38.3231843, 128.5274240),
+  defaultBeach("goseong-sampo", "고성", "삼포해수욕장", 38.3151120, 128.5350707),
+  defaultBeach("goseong-sampo2", "고성", "삼포2리해수욕장", 38.3122000, 128.5390000),
+  defaultBeach("goseong-jajakdo", "고성", "자작도해수욕장", 38.3085803, 128.5430576),
+  defaultBeach("goseong-jajakdo-camp", "고성", "자작도캠핑장해수욕장", 38.3075000, 128.5438000),
+  defaultBeach("goseong-baekdo", "고성", "백도해수욕장", 38.2998786, 128.5469193),
+  defaultBeach("goseong-munamjin2", "고성", "문암진2리해수욕장", 38.2969836, 128.5482010),
+  defaultBeach("goseong-gyoam", "고성", "교암해수욕장", 38.2926944, 128.5480594),
+  defaultBeach("ayajin", "고성", "아야진해수욕장", 38.2759389, 128.5534139),
+  defaultBeach("goseong-cheonggan", "고성", "청간해수욕장", 38.2677223, 128.5573050),
+  defaultBeach("cheonjin", "고성", "천진해수욕장", 38.2576417, 128.5603917),
+  defaultBeach("goseong-bongpo", "고성", "봉포해수욕장", 38.2544652, 128.5635914),
+  defaultBeach("goseong-kensington", "고성", "켄싱턴리조트해수욕장", 38.2490000, 128.5660000),
+
+  defaultBeach("sokcho-lighthouse", "속초", "등대해수욕장", 38.2154000, 128.6007000),
+  defaultBeach("sokcho-cheongho", "속초", "청호해수욕장", 38.2039399, 128.5951991),
+  defaultBeach("sokcho-main", "속초", "속초해수욕장", 38.1880319, 128.6061423),
+  defaultBeach("sokcho-oeongchi", "속초", "외옹치해수욕장", 38.1836279, 128.6089723),
+
+  defaultBeach("samcheok-jeungsan", "삼척", "증산해수욕장", 37.4743735, 129.1621189),
+  defaultBeach("samcheok-jageunhujin", "삼척", "작은후진해수욕장", 37.4721000, 129.1675000),
+  defaultBeach("samcheok-main", "삼척", "삼척해수욕장", 37.4682253, 129.1695800),
+  defaultBeach("samcheok-obun", "삼척", "오분해수욕장", 37.4400000, 129.1950000),
+  defaultBeach("samcheok-hanjaemit", "삼척", "한재밑해수욕장", 37.4084958, 129.2053505),
+  defaultBeach("samcheok-sangmaengbang", "삼척", "상맹방해수욕장", 37.4032408, 129.2116069),
+  defaultBeach("samcheok-maengbang", "삼척", "맹방해수욕장", 37.3980000, 129.2220000),
+  defaultBeach("samcheok-hamaengbang", "삼척", "하맹방해수욕장", 37.3905501, 129.2314907),
+  defaultBeach("samcheok-deoksan", "삼척", "덕산해수욕장", 37.3838083, 129.2454897),
+  defaultBeach("samcheok-bunam", "삼척", "부남해수욕장", 37.3624357, 129.2513058),
+  defaultBeach("samcheok-gungchon", "삼척", "궁촌해수욕장", 37.3268000, 129.2702000),
+  defaultBeach("samcheok-wonpyeong", "삼척", "원평해수욕장", 37.3196228, 129.2724870),
+  defaultBeach("samcheok-munam", "삼척", "문암해수욕장", 37.3090605, 129.2890802),
+  defaultBeach("samcheok-yonghwa", "삼척", "용화해수욕장", 37.2912335, 129.3041079),
+  defaultBeach("samcheok-jangho", "삼척", "장호해수욕장", 37.2861867, 129.3123394),
+  defaultBeach("samcheok-imwon", "삼척", "임원해수욕장", 37.2266924, 129.3414379)
 ];
+
+function defaultBeach(id, region, beachName, latitude, longitude) {
+  return {
+    id,
+    name: `${region} - ${beachName}`,
+    shortName: beachName,
+    region,
+    latitude,
+    longitude,
+    source: "강원특별자치도·시군 해수욕장 목록"
+  };
+}
 
 const STORAGE = {
   favorites: "coastForecast:favorites",
+  defaultPlacesVersion: "coastForecast:defaultPlacesVersion",
   lastPlaceId: "coastForecast:lastPlaceId",
   lastDate: "coastForecast:lastDate",
   lastStartDate: "coastForecast:lastStartDate",
@@ -1062,19 +1065,7 @@ function renderChangesView() {
 function renderSettingsView() {
   renderKmaKeyControls();
 
-  els.favoriteList.innerHTML = state.favorites.map((place) => `
-    <div class="favorite-item">
-      <button class="search-result" type="button" data-place-id="${place.id}">
-        <span>
-          <strong>${escapeHtml(place.name)}</strong>
-          <small>${place.latitude.toFixed(5)}, ${place.longitude.toFixed(5)} · ${escapeHtml(place.source || "사용자 저장")}</small>
-        </span>
-      </button>
-      <button class="icon-button" type="button" data-remove-id="${place.id}" aria-label="${escapeHtml(place.name)} 삭제" title="즐겨찾기 삭제">
-        <i data-lucide="trash-2"></i>
-      </button>
-    </div>
-  `).join("");
+  els.favoriteList.innerHTML = favoriteSettingsGroups(state.favorites);
 
   els.favoriteList.querySelectorAll("[data-place-id]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -1569,10 +1560,7 @@ function showFavoriteSuggestions() {
 
   els.searchResults.innerHTML = `
     <div class="search-results-label">저장한 장소</div>
-    ${favorites.map((place) => searchResultButton(place, {
-      favorite: state.favorites.some((favorite) => favorite.id === place.id),
-      current: place.id === state.currentPlace?.id
-    })).join("")}
+    ${favoriteSuggestionGroups(favorites)}
   `;
   openSearchResults();
   bindSearchResultEvents();
@@ -1658,6 +1646,61 @@ function searchResultButton(place, options = {}) {
   `;
 }
 
+function favoriteSuggestionGroups(places) {
+  return placesByRegion(places).map(([region, regionPlaces]) => `
+    <div class="search-group-label">${escapeHtml(region)}</div>
+    ${regionPlaces.map((place) => searchResultButton(place, {
+      favorite: state.favorites.some((favorite) => favorite.id === place.id),
+      current: place.id === state.currentPlace?.id
+    })).join("")}
+  `).join("");
+}
+
+function favoriteSettingsGroups(places) {
+  return placesByRegion(places).map(([region, regionPlaces]) => `
+    <div class="favorite-group-label">${escapeHtml(region)}</div>
+    ${regionPlaces.map((place) => favoriteSettingsItem(place)).join("")}
+  `).join("");
+}
+
+function favoriteSettingsItem(place) {
+  return `
+    <div class="favorite-item">
+      <button class="search-result" type="button" data-place-id="${place.id}">
+        <span>
+          <strong>${escapeHtml(place.name)}</strong>
+          <small>${place.latitude.toFixed(5)}, ${place.longitude.toFixed(5)} · ${escapeHtml(place.source || "사용자 저장")}</small>
+        </span>
+      </button>
+      <button class="icon-button" type="button" data-remove-id="${place.id}" aria-label="${escapeHtml(place.name)} 삭제" title="즐겨찾기 삭제">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>
+  `;
+}
+
+function placeRegion(place) {
+  if (place.region) return place.region;
+  const prefix = String(place.name || "").match(/^(.+?)\s-\s/u)?.[1]?.trim();
+  return prefix || "기타";
+}
+
+function placesByRegion(places) {
+  const groups = new Map();
+  places.forEach((place) => {
+    const region = placeRegion(place);
+    if (!groups.has(region)) groups.set(region, []);
+    groups.get(region).push(place);
+  });
+  const preferredOrder = ["고성", "속초", "삼척", "기타"];
+  return [...groups.entries()].sort((a, b) => {
+    const aIndex = preferredOrder.indexOf(a[0]);
+    const bIndex = preferredOrder.indexOf(b[0]);
+    return (aIndex < 0 ? preferredOrder.length : aIndex)
+      - (bIndex < 0 ? preferredOrder.length : bIndex);
+  });
+}
+
 function bindSearchResultEvents() {
   els.searchResults.querySelectorAll("[data-result]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -1729,14 +1772,27 @@ function useCurrentLocation() {
 }
 
 function loadFavorites() {
+  let stored = [];
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE.favorites) || "null");
-    if (Array.isArray(stored) && stored.length) return stored;
+    const parsed = JSON.parse(localStorage.getItem(STORAGE.favorites) || "null");
+    if (Array.isArray(parsed)) stored = parsed;
   } catch (error) {
     localStorage.removeItem(STORAGE.favorites);
   }
-  localStorage.setItem(STORAGE.favorites, JSON.stringify(DEFAULT_PLACES));
-  return [...DEFAULT_PLACES];
+
+  const savedVersion = localStorage.getItem(STORAGE.defaultPlacesVersion);
+  if (stored.length && savedVersion === DEFAULT_PLACES_VERSION) return stored;
+
+  const defaultIds = new Set(DEFAULT_PLACES.map((place) => place.id));
+  const customPlaces = stored
+    .filter((place) => !defaultIds.has(place.id))
+    .map((place) => place.id === "kumho-seorak"
+      ? { ...place, name: "속초 - 금호설악리조트", region: "속초" }
+      : place);
+  const merged = [...DEFAULT_PLACES, ...customPlaces];
+  localStorage.setItem(STORAGE.favorites, JSON.stringify(merged));
+  localStorage.setItem(STORAGE.defaultPlacesVersion, DEFAULT_PLACES_VERSION);
+  return merged;
 }
 
 function loadKmaApiKey() {
