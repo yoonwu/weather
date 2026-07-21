@@ -648,10 +648,12 @@ function disabledSource(id, label, title, subtitle, icon, message) {
 function forecastTile(hour, kind, compact = false) {
   if (compact) return compactForecastTile(hour, kind);
 
+  const weatherClass = `weather-${weatherTone(hour.icon, kind)}`;
+
   return `
-    <article class="forecast-tile ${kind === "marine" ? "is-marine" : ""} ${compact ? "is-compact" : ""}">
+    <article class="forecast-tile ${weatherClass} ${kind === "marine" ? "is-marine" : ""} ${compact ? "is-compact" : ""}">
       <div class="tile-time">${formatTableTime(hour.time)}</div>
-      <div class="tile-icon"><i data-lucide="${hour.icon}"></i></div>
+      <div class="tile-icon weather-glyph" title="${escapeAttribute(hour.status)}"><i data-lucide="${hour.icon}"></i></div>
       <strong>${escapeHtml(hour.primary)}</strong>
       <span>${escapeHtml(hour.secondary)}</span>
       <small>${escapeHtml(hour.status)}</small>
@@ -663,11 +665,13 @@ function forecastTile(hour, kind, compact = false) {
 }
 
 function compactForecastTile(hour, kind) {
+  const weatherClass = `weather-${weatherTone(hour.icon, kind)}`;
+
   return `
-    <article class="forecast-tile is-compact ${kind === "marine" ? "is-marine" : ""}">
+    <article class="forecast-tile is-compact ${weatherClass} ${kind === "marine" ? "is-marine" : ""}">
       <div class="compact-top">
         <span>${formatTableTime(hour.time)}</span>
-        <i data-lucide="${hour.icon}"></i>
+        <span class="weather-glyph" title="${escapeAttribute(hour.status)}"><i data-lucide="${hour.icon}"></i></span>
       </div>
       <div class="compact-main">
         <strong>${escapeHtml(hour.primary)}</strong>
@@ -1823,6 +1827,7 @@ function modelIcon(modelId) {
 function weatherIcon(hour) {
   const code = Number(hour.weatherCode);
   if (code >= 95) return "cloud-lightning";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "cloud-snow";
   if (Number(hour.precipitation) >= CONFIG.thresholds.rainMm || code >= 51 && code <= 82) return "cloud-rain";
   if (code === 45 || code === 48) return "cloud-fog";
   if (Number(hour.cloudCover) >= 80 || code === 3) return "cloud";
@@ -1833,6 +1838,7 @@ function weatherIcon(hour) {
 function kmaIcon(hour) {
   const text = `${hour.sky || ""} ${hour.precipitationType || ""}`;
   if (text.includes("낙뢰") || text.includes("뇌")) return "cloud-lightning";
+  if (text.includes("눈")) return "cloud-snow";
   if (hour.precipitationType && hour.precipitationType !== "없음") return "cloud-rain";
   if (text.includes("흐림")) return "cloud";
   if (text.includes("구름")) return "cloud-sun";
@@ -1842,9 +1848,25 @@ function kmaIcon(hour) {
 function accuweatherIcon(hour) {
   const text = hour.weatherText || "";
   if (text.includes("뇌") || text.includes("Thunder")) return "cloud-lightning";
+  if (text.includes("눈") || text.includes("Snow")) return "cloud-snow";
   if (text.includes("비") || text.includes("Rain") || Number(hour.precipitationProbability) >= CONFIG.thresholds.rainProbability) return "cloud-rain";
   if (text.includes("흐") || text.includes("Cloud")) return "cloud";
   return "sun";
+}
+
+function weatherTone(icon, kind) {
+  if (kind === "marine") return icon === "wind" ? "wind" : "marine";
+  return ({
+    sun: "sunny",
+    "cloud-sun": "partly",
+    cloud: "cloudy",
+    "cloud-rain": "rain",
+    "cloud-lightning": "thunder",
+    "cloud-fog": "fog",
+    "cloud-snow": "snow",
+    wind: "wind",
+    waves: "marine"
+  })[icon] || "neutral";
 }
 
 function marineIcon(hour) {
