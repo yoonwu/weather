@@ -524,11 +524,11 @@ function buildHourlySources() {
       primary: `${fmt(hour.temperature, 1)}℃`,
       secondary: `${fmt(hour.precipitation, 1)}mm`,
       metrics: [
-        ["확률", `${fmt(hour.precipitationProbability, 0)}%`],
+        ["비/구름", `${fmt(hour.precipitationProbability, 0)}%/${fmt(hour.cloudCover, 0)}%`],
         ["풍속", `${fmt(hour.windSpeed, 1)}m/s`],
         ["돌풍", `${fmt(hour.gust, 1)}m/s`],
-        ["구름", `${fmt(hour.cloudCover, 0)}%`],
-        ["파도", waveMetric(hour, marineByTime)]
+        ["파도", waveMetric(hour, marineByTime)],
+        ["수온", seaTemperatureMetric(hour, marineByTime)]
       ]
     }))
   }));
@@ -569,11 +569,11 @@ function buildKmaSource() {
       primary: `${fmt(hour.temperature, 1)}℃`,
       secondary: `${fmt(hour.precipitationProbability, 0)}%`,
       metrics: [
-        ["확률", `${fmt(hour.precipitationProbability, 0)}%`],
+        ["비/구름", `${fmt(hour.precipitationProbability, 0)}%/${hour.sky || "-"}`],
         ["풍속", `${fmt(hour.windSpeed, 1)}m/s`],
         ["돌풍", "-"],
-        ["구름", hour.sky || "-"],
-        ["파도", waveMetric(hour, marineByTime)]
+        ["파도", waveMetric(hour, marineByTime)],
+        ["수온", seaTemperatureMetric(hour, marineByTime)]
       ]
     }))
   };
@@ -607,11 +607,11 @@ function buildAccuWeatherSource() {
       primary: `${fmt(hour.temperature, 1)}℃`,
       secondary: `${fmt(hour.precipitationProbability, 0)}%`,
       metrics: [
-        ["확률", `${fmt(hour.precipitationProbability, 0)}%`],
+        ["비/구름", `${fmt(hour.precipitationProbability, 0)}%/-`],
         ["풍속", `${fmt(hour.windSpeed, 1)}m/s`],
         ["돌풍", `${fmt(hour.gust, 1)}m/s`],
-        ["구름", "-"],
-        ["파도", waveMetric(hour, marineByTime)]
+        ["파도", waveMetric(hour, marineByTime)],
+        ["수온", seaTemperatureMetric(hour, marineByTime)]
       ]
     }))
   };
@@ -636,11 +636,11 @@ function buildMarineSource() {
       primary: `${fmt(hour.waveHeight, 2)}m`,
       secondary: `${fmt(hour.seaSurfaceTemperature, 1)}℃`,
       metrics: [
-        ["확률", "-"],
+        ["비/구름", "-/-"],
         ["풍속", `${fmt(hour.windSpeed, 1)}m/s`],
         ["돌풍", `${fmt(hour.gust, 1)}m/s`],
-        ["구름", "-"],
-        ["파도", `${fmt(hour.waveHeight, 2)}m`]
+        ["파도", `${fmt(hour.waveHeight, 2)}m`],
+        ["수온", `${fmt(hour.seaSurfaceTemperature, 1)}℃`]
       ]
     }))
   };
@@ -653,6 +653,11 @@ function marineHourMap() {
 function waveMetric(hour, marineByTime) {
   const wave = hour.waveHeight ?? marineByTime.get(hour.time)?.waveHeight;
   return Number.isFinite(Number(wave)) ? `${fmt(wave, 2)}m` : "-";
+}
+
+function seaTemperatureMetric(hour, marineByTime) {
+  const temperature = hour.seaSurfaceTemperature ?? marineByTime.get(hour.time)?.seaSurfaceTemperature;
+  return Number.isFinite(Number(temperature)) ? `${fmt(temperature, 1)}℃` : "-";
 }
 
 function disabledSource(id, label, title, subtitle, icon, message) {
