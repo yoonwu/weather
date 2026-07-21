@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-    <link rel="stylesheet" href="styles.css?v=17">
+    <link rel="stylesheet" href="styles.css?v=18">
   </head>
   <body>
     <div class="app-shell">
@@ -25,10 +25,27 @@
       <section id="alertBanner" class="alert-banner is-hidden" aria-live="polite"></section>
 
       <section class="control-panel" aria-label="예보 조회 설정">
-        <label class="field">
-          <span>장소</span>
-          <select id="placeSelect"></select>
-        </label>
+        <div class="place-picker" id="placePicker">
+          <span class="field-label">장소</span>
+          <form class="place-search-form" id="searchForm" role="search" autocomplete="off">
+            <i data-lucide="search"></i>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="해수욕장, 숙소, 지역 검색"
+              aria-label="장소 검색"
+              aria-autocomplete="list"
+              aria-controls="searchResults"
+              aria-expanded="false"
+              role="combobox"
+              spellcheck="false"
+            >
+            <button class="place-search-button" type="submit" aria-label="장소 검색" title="장소 검색">
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </form>
+          <div id="searchResults" class="search-results place-results is-hidden" role="listbox"></div>
+        </div>
         <label class="field">
           <span>시작 날짜</span>
           <input id="startDateInput" type="date">
@@ -46,15 +63,6 @@
           즐겨찾기 추가
         </button>
       </section>
-
-      <form class="search-panel" id="searchForm">
-        <label class="search-input">
-          <i data-lucide="search"></i>
-          <input id="searchInput" type="search" placeholder="장소 검색">
-        </label>
-        <button class="text-button" type="submit">검색</button>
-      </form>
-      <div id="searchResults" class="search-results is-hidden"></div>
 
       <div class="meta-row">
         <span id="lastUpdated">아직 갱신 전</span>
@@ -219,6 +227,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
   </body>
 </html>

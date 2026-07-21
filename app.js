@@ -122,6 +122,8 @@ const state = {
   activeTab: "summary",
   activeSource: "all",
   expandedSources: new Set(["ecmwf"]),
+  searchRequestId: 0,
+  searchTimer: null,
   loading: false
 };
 
@@ -178,7 +180,7 @@ function bindElements() {
   [
     "refreshButton",
     "alertBanner",
-    "placeSelect",
+    "placePicker",
     "startDateInput",
     "endDateInput",
     "locateButton",
@@ -227,17 +229,15 @@ function bindEvents() {
   els.saveKmaKeyButton.addEventListener("click", saveKmaApiKey);
   els.clearKmaKeyButton.addEventListener("click", clearKmaApiKey);
 
-  els.placeSelect.addEventListener("change", async () => {
-    const selected = getPlaceById(els.placeSelect.value);
-    if (!selected) return;
-    state.currentPlace = selected;
-    localStorage.setItem(STORAGE.lastPlaceId, selected.id);
-    await refreshForecast();
-  });
-
   els.locateButton.addEventListener("click", useCurrentLocation);
   els.quickFavoriteButton.addEventListener("click", () => addFavorite(state.currentPlace));
   els.searchForm.addEventListener("submit", searchPlaces);
+  els.searchInput.addEventListener("focus", showFavoriteSuggestions);
+  els.searchInput.addEventListener("input", handleSearchInput);
+  els.placePicker.addEventListener("keydown", handlePlacePickerKeydown);
+  document.addEventListener("pointerdown", (event) => {
+    if (!els.placePicker.contains(event.target)) closeSearchResults({ restoreValue: true });
+  });
   els.addFavoriteButton.addEventListener("click", () => addFavorite(state.currentPlace));
   els.addMapPointButton.addEventListener("click", () => {
     if (!state.map) return;
@@ -1543,13 +1543,60 @@ function updateMap() {
   state.map.setView([state.currentPlace.latitude, state.currentPlace.longitude], Math.max(state.map.getZoom(), 10), { animate: true });
 }
 
-async function searchPlaces(event) {
-  event.preventDefault();
+function handleSearchInput() {
+  window.clearTimeout(state.searchTimer);
+  state.searchRequestId += 1;
   const query = els.searchInput.value.trim();
-  if (!query) return;
+  if (query.length < 2) {
+    showFavoriteSuggestions();
+    return;
+  }
+  state.searchTimer = window.setTimeout(() => searchPlaces(), 450);
+}
 
-  els.searchResults.classList.remove("is-hidden");
-  els.searchResults.innerHTML = `<div class="skeleton block"></div>`;
+function showFavoriteSuggestions() {
+  const query = els.searchInput.value.trim().toLocaleLowerCase("ko-KR");
+  const places = [...state.favorites];
+  if (state.currentPlace && !places.some((place) => place.id === state.currentPlace.id)) {
+    places.unshift(state.currentPlace);
+  }
+  const favorites = places.filter((place) => {
+    if (!query || query === state.currentPlace?.name.toLocaleLowerCase("ko-KR")) return true;
+    return place.name.toLocaleLowerCase("ko-KR").includes(query);
+  });
+
+  if (!favorites.length && query.length >= 2) return;
+
+  els.searchResults.innerHTML = `
+    <div class="search-results-label">저장한 장소</div>
+    ${favorites.map((place) => searchResultButton(place, {
+      favorite: state.favorites.some((favorite) => favorite.id === place.id),
+      current: place.id === state.currentPlace?.id
+    })).join("")}
+  `;
+  openSearchResults();
+  bindSearchResultEvents();
+  renderIcons();
+}
+
+async function searchPlaces(event) {
+  event?.preventDefault();
+  window.clearTimeout(state.searchTimer);
+  const query = els.searchInput.value.trim();
+  if (!query) {
+    showFavoriteSuggestions();
+    return;
+  }
+
+  const requestId = ++state.searchRequestId;
+  openSearchResults();
+  els.searchResults.innerHTML = `
+    <div class="search-loading" role="status">
+      <i data-lucide="loader-circle"></i>
+      <span>장소를 찾는 중</span>
+    </div>
+  `;
+  renderIcons();
 
   try {
     const url = new URL("/api/geocode", window.location.origin);
@@ -1557,40 +1604,107 @@ async function searchPlaces(event) {
     const response = await fetch(url);
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "검색 실패");
+    if (requestId !== state.searchRequestId) return;
 
     if (!data.results.length) {
-      els.searchResults.innerHTML = `<p class="muted">검색 결과가 없습니다.</p>`;
+      els.searchResults.innerHTML = `
+        <div class="search-empty">
+          <i data-lucide="map-pin-off"></i>
+          <span>검색 결과가 없습니다. 지역명을 함께 입력해 보세요.</span>
+        </div>
+      `;
       return;
     }
 
-    els.searchResults.innerHTML = data.results.map((place) => `
-      <button class="search-result" type="button" data-result='${escapeAttribute(JSON.stringify(place))}'>
-        <span>
-          <strong>${escapeHtml(place.name)}</strong>
-          <small>${escapeHtml(place.label)} · ${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}</small>
-        </span>
-        <span class="source-pill">${escapeHtml(place.source)}</span>
-      </button>
-    `).join("");
-
-    els.searchResults.querySelectorAll("[data-result]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const place = JSON.parse(button.dataset.result);
-        selectPlace({
-          id: `search-${place.latitude.toFixed(5)}-${place.longitude.toFixed(5)}`,
-          name: place.name,
-          latitude: place.latitude,
-          longitude: place.longitude,
-          source: place.source
-        });
-        els.searchResults.classList.add("is-hidden");
-        await refreshForecast();
-      });
-    });
+    els.searchResults.innerHTML = `
+      <div class="search-results-label">검색 결과</div>
+      ${data.results.map((place) => searchResultButton(place)).join("")}
+    `;
+    bindSearchResultEvents();
   } catch (error) {
-    els.searchResults.innerHTML = `<p class="muted">${escapeHtml(error.message)}</p>`;
+    if (requestId !== state.searchRequestId) return;
+    els.searchResults.innerHTML = `
+      <div class="search-empty">
+        <i data-lucide="circle-alert"></i>
+        <span>${escapeHtml(error.message)}</span>
+      </div>
+    `;
   } finally {
-    renderIcons();
+    if (requestId === state.searchRequestId) renderIcons();
+  }
+}
+
+function searchResultButton(place, options = {}) {
+  const detail = options.favorite || options.current
+    ? `${options.current ? "현재 선택" : "즐겨찾기"} · ${place.source || "사용자 저장"}`
+    : place.label || `${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}`;
+  const icon = options.favorite || options.current ? "bookmark" : place.type === "beach" ? "waves" : "map-pin";
+  return `
+    <button
+      class="search-result"
+      type="button"
+      role="option"
+      data-result='${escapeAttribute(JSON.stringify(place))}'
+    >
+      <span class="search-result-main">
+        <span class="search-result-icon"><i data-lucide="${icon}"></i></span>
+        <span class="search-result-copy">
+          <strong>${escapeHtml(place.name)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </span>
+      </span>
+      ${options.favorite || options.current ? "" : `<span class="source-pill">${escapeHtml(place.source || "장소 검색")}</span>`}
+    </button>
+  `;
+}
+
+function bindSearchResultEvents() {
+  els.searchResults.querySelectorAll("[data-result]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const place = JSON.parse(button.dataset.result);
+      selectPlace({
+        ...place,
+        id: state.favorites.some((favorite) => favorite.id === place.id)
+          ? place.id
+          : `search-${place.latitude.toFixed(5)}-${place.longitude.toFixed(5)}`
+      });
+      closeSearchResults();
+      await refreshForecast();
+    });
+  });
+}
+
+function handlePlacePickerKeydown(event) {
+  if (event.key === "Escape") {
+    closeSearchResults();
+    els.searchInput.value = state.currentPlace?.name || "";
+    els.searchInput.focus();
+    return;
+  }
+
+  if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+  const options = [...els.searchResults.querySelectorAll(".search-result")];
+  if (!options.length) return;
+  event.preventDefault();
+  const currentIndex = options.indexOf(document.activeElement);
+  const nextIndex = currentIndex < 0
+    ? event.key === "ArrowDown" ? 0 : options.length - 1
+    : event.key === "ArrowDown"
+      ? (currentIndex + 1) % options.length
+      : (currentIndex - 1 + options.length) % options.length;
+  options[nextIndex].focus();
+}
+
+function openSearchResults() {
+  els.searchResults.classList.remove("is-hidden");
+  els.searchInput.setAttribute("aria-expanded", "true");
+}
+
+function closeSearchResults(options = {}) {
+  els.searchResults.classList.add("is-hidden");
+  els.searchInput.setAttribute("aria-expanded", "false");
+  if (options.restoreValue && state.currentPlace) {
+    els.searchInput.value = state.currentPlace.name;
   }
 }
 
@@ -1649,14 +1763,9 @@ function selectPlace(place) {
 
 function renderPlaceOptions() {
   if (!state.currentPlace) return;
-  const options = [...state.favorites];
-  if (!options.some((place) => place.id === state.currentPlace.id)) {
-    options.unshift(state.currentPlace);
+  if (document.activeElement !== els.searchInput) {
+    els.searchInput.value = state.currentPlace.name;
   }
-  els.placeSelect.innerHTML = options.map((place) => `
-    <option value="${escapeAttribute(place.id)}">${escapeHtml(place.name)}</option>
-  `).join("");
-  els.placeSelect.value = state.currentPlace.id;
 }
 
 function addFavorite(place) {

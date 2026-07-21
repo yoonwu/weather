@@ -176,7 +176,7 @@ h3 {
 }
 
 .field,
-.search-input {
+.place-picker {
   display: flex;
   align-items: center;
   min-width: 0;
@@ -192,15 +192,15 @@ h3 {
   padding: 8px 10px;
 }
 
-.field span {
+.field span,
+.field-label {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
 }
 
 .field select,
-.field input,
-.search-input input {
+.field input {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -213,41 +213,201 @@ h3 {
   color-scheme: dark;
 }
 
-.search-panel {
+.place-picker {
+  position: relative;
+  z-index: 20;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.place-picker:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(77, 182, 172, 0.14);
+}
+
+.place-search-form {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.search-input {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  min-height: 44px;
 }
 
-.search-input svg {
+.place-search-form > svg {
+  width: 17px;
+  height: 17px;
+  color: var(--teal);
+}
+
+.place-search-form input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.place-search-form input::-webkit-search-cancel-button {
+  filter: invert(1);
+  opacity: 0.65;
+}
+
+.place-search-button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: var(--surface-2);
   color: var(--muted);
-  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.place-search-button:hover,
+.place-search-button:focus-visible {
+  background: rgba(77, 182, 172, 0.2);
+  color: #d6fffa;
+}
+
+.place-search-button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .search-results {
   display: grid;
-  gap: 8px;
-  margin: 0 0 10px;
+  gap: 4px;
+}
+
+.place-results {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: -1px;
+  width: min(520px, calc(100vw - 28px));
+  max-height: min(420px, 62vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #43555d;
+  border-radius: var(--radius);
+  padding: 7px;
+  background: #151c20;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.52);
+}
+
+.search-results-label {
+  padding: 6px 8px 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .search-result {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  background: var(--surface);
+  min-height: 58px;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px;
+  background: transparent;
+  color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+
+.search-result:hover,
+.search-result:focus-visible {
+  outline: 0;
+  background: #243139;
+}
+
+.search-result-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.search-result-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(77, 182, 172, 0.14);
+  color: #82ded4;
+}
+
+.search-result-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.search-result-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.search-result strong,
+.search-result small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result strong {
+  color: #f6fbfa;
+  font-size: 0.9rem;
+}
+
+.search-result small {
+  color: #a9bbb8;
+  font-size: 0.74rem;
+}
+
+.search-result .source-pill {
+  flex: 0 0 auto;
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-loading,
+.search-empty {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 58px;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.search-loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+.search-loading svg,
+.search-empty svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .meta-row {
@@ -1216,7 +1376,7 @@ th {
     grid-template-columns: 1fr 1fr;
   }
 
-  .control-panel .field:first-child {
+  .control-panel .place-picker {
     grid-column: span 2;
   }
 
@@ -1249,10 +1409,6 @@ th {
   }
 
   .metric-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .search-panel {
     grid-template-columns: 1fr;
   }
 

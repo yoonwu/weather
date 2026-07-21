@@ -20,9 +20,10 @@ Vercel 프로젝트의 Environment Variables에 아래 값을 등록합니다.
 KMA_API_PROVIDER=apihub
 KMA_API_KEY=발급받은_기상청_API허브_키
 ACCUWEATHER_API_KEY=
+KAKAO_REST_API_KEY=
 ```
 
-`ACCUWEATHER_API_KEY`는 없으면 비워둬도 됩니다. KMA는 API허브에서 단기예보 API 활용신청이 승인되어야 활성화됩니다.
+`ACCUWEATHER_API_KEY`와 `KAKAO_REST_API_KEY`는 없으면 비워둬도 됩니다. 카카오 키를 등록하면 국내 장소·관광지 검색 결과가 더 풍부해집니다. KMA는 API허브에서 단기예보 API 활용신청이 승인되어야 활성화됩니다.
 
 ## 3. 배포
 

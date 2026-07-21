@@ -35,11 +35,13 @@ npm run dev
 ```bash
 KMA_API_KEY=
 ACCUWEATHER_API_KEY=
+KAKAO_REST_API_KEY=
 ```
 
 - `KMA_API_PROVIDER`: `apihub` 또는 `data.go.kr`. API허브 키를 받은 경우 `apihub`를 사용합니다.
 - `KMA_API_KEY`: 기상청 단기예보와 기상특보 조회
 - `ACCUWEATHER_API_KEY`: AccuWeather 시간별 예보 조회
+- `KAKAO_REST_API_KEY`: 국내 상호·관광지 검색 품질을 높이는 카카오 로컬 REST API 키. 없으면 Open-Meteo와 OpenStreetMap 검색을 사용합니다.
 
 기상청 API허브 키는 계정 키와 별도로 사용할 API의 활용신청이 필요할 수 있습니다. KMA 탭이 “활용신청 필요”로 보이면 API허브에서 `예특보 > 단기예보 > 동네예보 조회 > 단기예보조회` 활용신청을 완료한 뒤 새로고침하세요.
 
